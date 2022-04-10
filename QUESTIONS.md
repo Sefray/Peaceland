@@ -15,7 +15,11 @@ consistent. We will therefore need a distributed No-SQL database.
 * What business constraint should the architecture meet to fulfill the
   requirement describe in the paragraph «Alert»? Which component to choose?
 
-TODO
+We need the peacewatchers to be fast and not be slowed down by the process of
+managing the reports. We need the alerts to be sent fast to the peacemaker.
+For that we need distributed streams between the peacewatchers and processes
+and between the processes and peacemakers. We also need to send the reports to
+the database, for that we also need a stream to not slow down the processes.
 
 * What mistake(s) from Peaceland can explain the failed attempt?
 
