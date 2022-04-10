@@ -1,0 +1,19 @@
+{
+    "id": 42,
+    "pos": {
+        "lat": "22.3193 N",
+        "lon": "114.1694 E"
+    },
+    "citizens": [
+        {
+            "citizenId": "",
+            "citizenScore": -42,
+            "words": [
+                "It's",
+                "literally",
+                "1984"
+            ]
+        }
+    ],
+    "timestamp": "12:40:32H21/11/22ZUTC+2"
+}
