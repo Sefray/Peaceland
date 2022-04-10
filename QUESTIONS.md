@@ -23,7 +23,10 @@ the database, for that we also need a stream to not slow down the processes.
 
 * What mistake(s) from Peaceland can explain the failed attempt?
 
-TODO
+Datascientists didn't take into account the size of the problem. They likely
+didn't expect this much data to store for the statistics and probably didn't
+use a micro-service for the processes handling the alerts, and only had one
+server doing the job, making it impossible to scale.
 
 * Peaceland has likely forgotten some technical information in the report sent
   by the drone. In the future, this information could help Peaceland make its
