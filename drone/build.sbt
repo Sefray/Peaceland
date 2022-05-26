@@ -5,6 +5,7 @@ ThisBuild / scalaVersion := "2.13.8"
 lazy val root = (project in file("."))
   .settings(
     name := "drone",
-    idePackagePrefix := Some("peaceland"),
-    libraryDependencies += "org.apache.kafka" %% "kafka" % "2.6.0"
+    // idePackagePrefix := Some("peaceland"),
+    libraryDependencies += "org.apache.kafka" %% "kafka" % "2.6.0",
+    libraryDependencies += "org.json4s" %% "json4s-jackson" % "4.0.5"
   )
