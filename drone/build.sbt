@@ -7,5 +7,6 @@ lazy val root = (project in file("."))
     name := "drone",
     // idePackagePrefix := Some("peaceland"),
     libraryDependencies += "org.apache.kafka" %% "kafka" % "2.6.0",
-    libraryDependencies += "org.json4s" %% "json4s-jackson" % "4.0.5"
+    libraryDependencies += "org.json4s" %% "json4s-jackson" % "4.0.5",
+    libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.30.0"
   )

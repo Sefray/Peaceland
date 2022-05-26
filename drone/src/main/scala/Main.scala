@@ -9,13 +9,15 @@ import scala.util.Random
 
 import java.util.UUID.randomUUID
 
+import com.github.nscala_time.time.Imports._
+
 import org.json4s._
 import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization.write
 
 final case class Location(lat : String, lon : String)
-final case class Citizen(id : Int, score : Int, words : List[String])
-final case class DroneReport(id : Int, pos : Location, citizens : List[Citizen]) // TODO: Add timestamp
+final case class Citizen(id : String, score : Int, words : List[String])
+final case class DroneReport(id : Int, pos : Location, citizens : List[Citizen], timestamp : String)
 
 object Main {
 
@@ -32,14 +34,24 @@ object Main {
     Location(lon, lat)
   }
 
-  def generateDroneReport(rd : Random) : DroneReport = {
+  def generateCitizens(rd : Random, n : Int) : List[Citizen] = {
+    List
+    .range(0, n)
+    .map(x => Citizen(randomUUID().toString, rd.between(-100, 100), List.range(0, 10).map(w => rd.nextString(rd.between(3,10)))))
+  }
+
+  def generateDroneReport(rd : Random, initialTimestamp : DateTime) : DroneReport = {
 
     val nb_drone = 20
+    val nb_people = 5
+    val duration = 1 // Hours
 
     val droneId = rd.nextInt(nb_drone)
     val location = generateLocation(rd)
+    val citizens = generateCitizens(rd, rd.between(1, nb_people))
+    val timestamp = initialTimestamp + rd.between(0, 60 * duration).minutes
 
-    DroneReport(droneId, location, citizens)
+    DroneReport(droneId, location, citizens, timestamp.toString)
   }
 
   def main(args: Array[String]): Unit = {
@@ -56,11 +68,15 @@ object Main {
     val rd = new Random(seed)
     
     val topic = "kenobi"
+
+    val duration = 1 // in hours
+
+    val initialTimeStamp = DateTime.now()
     
     val nb_report = 10
     val reports =  List
     .range(0, nb_report)
-    .map(x => generateDroneReport(rd))
+    .map(x => generateDroneReport(rd, initialTimeStamp))
     .map(drone => write(drone))
     .map(serializedDrone => new ProducerRecord[String, String](topic, randomUUID().toString, serializedDrone))
     .foreach(x => producer.send(x))
