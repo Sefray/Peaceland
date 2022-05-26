@@ -14,13 +14,40 @@ services:
     # To learn about configuring Kafka for access across networks see
     # https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
       - "9092:9092"
+    expose:
+      - '29092'
     depends_on:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_CREATE_TOPICS: 'reports:1:3,alerts:1:3'
+      TOPIC_AUTO_CREATE: false
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+  broker-topic-setup:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: broker-topic-setup
+    depends_on:
+      - broker
+    restart: "no"
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      echo 'Waiting for broker to be online'
+      sleep 5 # prevent useless requests since the server takes time to setup
+
+      # but make sure it is online with a simple get request
+      kafka-topics --bootstrap-server broker:29092 --list
+
+      echo 'Creating kafka topics'
+      kafka-topics --bootstrap-server broker:29092 --create --if-not-exists --topic reports --replication-factor 1 --partitions 1
+      kafka-topics --bootstrap-server broker:29092 --create --if-not-exists --topic alerts --replication-factor 1 --partitions 1
+
+      echo 'Setup done, topics created:'
+      kafka-topics --bootstrap-server broker:29092 --list
+      "
