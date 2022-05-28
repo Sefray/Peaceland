@@ -1,4 +1,4 @@
-package drone {
+package peacewatcher {
 
   import scala.util.Random
 
@@ -6,9 +6,9 @@ package drone {
 
   import com.github.nscala_time.time.Imports._
 
-  import drone.{DroneReport, Location, Citizen}
+  import peacewatcher.{Report, Location, Citizen}
 
-  object Generator {
+  object ReportGenerator {
     def generateLocation(rd: Random): Location = {
       def generateLocationIntern(
           bound: Double,
@@ -38,20 +38,20 @@ package drone {
         )
     }
 
-    def generateDroneReport(
+    def generateReport(
         rd: Random,
         initialTimestamp: DateTime
-    ): DroneReport = {
-      val nb_drone = 20
+    ): Report = {
+      val nb_peacewatcher = 20
       val nb_people = 5
       val duration = 1 // Hours
 
-      val droneId = rd.nextInt(nb_drone)
+      val peacewatcherId = rd.nextInt(nb_peacewatcher)
       val location = generateLocation(rd)
       val citizens = generateCitizens(rd, rd.between(1, nb_people))
       val timestamp = initialTimestamp + rd.between(0, 60 * duration).minutes
 
-      DroneReport(droneId, location, citizens, timestamp.toString)
+      Report(peacewatcherId, location, citizens, timestamp.toString)
     }
   }
 }
