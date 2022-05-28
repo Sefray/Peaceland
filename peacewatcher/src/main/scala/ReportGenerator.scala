@@ -1,57 +1,60 @@
-package peacewatcher {
+package peaceland {
+  package peacewatcher {
 
-  import scala.util.Random
+    import scala.util.Random
 
-  import java.util.UUID.randomUUID
+    import java.util.UUID.randomUUID
 
-  import com.github.nscala_time.time.Imports._
+    import com.github.nscala_time.time.Imports._
 
-  import peacewatcher.{Report, Location, Citizen}
+    import peacewatcher.{Report, Location, Citizen}
 
-  object ReportGenerator {
-    def generateLocation(rd: Random): Location = {
-      def generateLocationIntern(
-          bound: Double,
-          a: String,
-          b: String
-      ): String = {
-        val F = ((rd.between(-bound, bound)) * 100).round / 100f
-        val L = if (rd.nextInt() % 2 == 0) a else b
-        F.toString + " " + L
+    object ReportGenerator {
+      def generateLocation(rd: Random): Location = {
+        def generateLocationIntern(
+            bound: Double,
+            a: String,
+            b: String
+        ): String = {
+          val F = ((rd.between(0, bound)) * 100).round / 100f
+          val L = if (rd.nextInt() % 2 == 0) a else b
+          F.toString + " " + L
+        }
+
+        val lon = generateLocationIntern(90, "N", "S")
+        val lat = generateLocationIntern(180, "E", "W")
+
+        Location(lon, lat)
       }
 
-      val lon = generateLocationIntern(90, "N", "S")
-      val lat = generateLocationIntern(180, "E", "W")
+      def generateCitizens(rd: Random, n: Int): List[Citizen] = {
+        val min_nb_word = 3
+        val max_nb_word = 10
 
-      Location(lon, lat)
-    }
-
-    def generateCitizens(rd: Random, n: Int): List[Citizen] = {
-      List
-        .range(0, n)
-        .map(x =>
-          Citizen(
-            randomUUID().toString,
-            rd.between(-100, 100),
-            List.range(0, 10).map(w => rd.nextString(rd.between(3, 10)))
+        List
+          .range(0, n)
+          .map(x =>
+            Citizen(
+              randomUUID().toString,
+              rd.between(-100, 100),
+              List.range(0, 10).map(w => rd.nextString(rd.between(min_nb_word, max_nb_word)))
+            )
           )
-        )
-    }
+      }
 
-    def generateReport(
-        rd: Random,
-        initialTimestamp: DateTime
-    ): Report = {
-      val nb_peacewatcher = 20
-      val nb_people = 5
-      val duration = 1 // Hours
+      def generateReport(
+          rd: Random,
+          peacewatcherId : Int,
+          initialTimestamp: DateTime
+      ): Report = {
+        val max_nb_people = 5
 
-      val peacewatcherId = rd.nextInt(nb_peacewatcher)
-      val location = generateLocation(rd)
-      val citizens = generateCitizens(rd, rd.between(1, nb_people))
-      val timestamp = initialTimestamp + rd.between(0, 60 * duration).minutes
+        val location = generateLocation(rd)
+        val citizens = generateCitizens(rd, rd.between(1, max_nb_people))
+        val timestamp = initialTimestamp
 
-      Report(peacewatcherId, location, citizens, timestamp.toString)
+        Report(peacewatcherId, location, citizens, timestamp.toString)
+      }
     }
   }
 }
