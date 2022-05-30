@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
@@ -13,17 +13,17 @@ services:
     image: confluentinc/cp-kafka:7.0.1
     container_name: broker
     ports:
-    # To learn about configuring Kafka for access across networks see
-    # https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
+      # To learn about configuring Kafka for access across networks see
+      # https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
       - "9092:9092"
     expose:
-      - '29092'
+      - "29092"
     depends_on:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_CREATE_TOPICS: 'reports:1:3,alerts:1:3'
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_CREATE_TOPICS: "reports:1:3,alerts:1:3"
       TOPIC_AUTO_CREATE: false
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
@@ -37,7 +37,7 @@ services:
     depends_on:
       - broker
     restart: "no"
-    entrypoint: [ '/bin/sh', '-c' ]
+    entrypoint: ["/bin/sh", "-c"]
     command: |
       "
       echo 'Waiting for broker to be online'
@@ -65,9 +65,9 @@ services:
       - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema_registry
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
-      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_ORIGIN: '*'
-      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_METHODS: 'GET,POST,PUT,OPTIONS'
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: "zookeeper:2181"
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_ORIGIN: "*"
+      SCHEMA_REGISTRY_ACCESS_CONTROL_ALLOW_METHODS: "GET,POST,PUT,OPTIONS"
 
   connect:
     image: confluentinc/cp-kafka-connect:6.2.4
@@ -78,6 +78,8 @@ services:
       - broker
     ports:
       - "8083:8083"
+    expose:
+      - "8083"
     environment:
       CONNECT_BOOTSTRAP_SERVERS: "broker:29092"
       CONNECT_REST_PORT: 8083
@@ -86,17 +88,18 @@ services:
       CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
       CONNECT_STATUS_STORAGE_TOPIC: _connect-status
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
-      CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER:
+        org.apache.kafka.connect.storage.StringConverter
         # CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
       CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
       CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
-    #  ---------------
+      #  ---------------
       CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/data/confluent-hub-components
     # If you want to use the Confluent Hub installer to d/l component, but make them available
-    # when running this offline, spin up the stack once and then run : 
+    # when running this offline, spin up the stack once and then run :
     #   docker cp kafka-connect:/usr/share/confluent-hub-components ./data/connect-jars
     volumes:
       - $PWD/kafka-connect-jars:/data
@@ -112,6 +115,40 @@ services:
         /etc/confluent/docker/run &
         #
         sleep infinity
+
+  connectors-init:
+    image: curlimages/curl:7.83.1
+    container_name: connectors-init
+    entrypoint: /bin/sh
+    depends_on:
+      - connect
+    command:
+      - -c
+      - |
+        while true; do \
+          curl http://connect:8083/; \
+          [ $$? -eq 0 ] && break; \
+          sleep 1;
+        done; \
+        sleep 1; \
+        echo "Activating connectors"
+        curl -X POST \
+        http://connect:8083/connectors \
+        -H 'Content-Type: application/json' \
+        -d '{
+          "name": "hdfs-sink",
+          "config": {
+            "connector.class": "io.confluent.connect.hdfs.HdfsSinkConnector",
+            "tasks.max": "1",
+            "topics": "reports",
+            "hdfs.url": "hdfs://namenode:9000",
+            "hadoop.conf.dir": "/usr/local/hadoop/etc/hadoop",
+            "hadoop.home": "/usr/local/hadoop",
+            "flush.size": "3",
+            "rotate.interval.ms": "1000"
+          }
+        }'; \
+        echo "Connectors activated"
 
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
