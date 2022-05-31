@@ -143,6 +143,7 @@ services:
             "hdfs.url": "hdfs://namenode:9000",
             "hadoop.conf.dir": "/usr/local/hadoop/etc/hadoop",
             "hadoop.home": "/usr/local/hadoop",
+            "format.class": "io.confluent.connect.hdfs.string.StringFormat",
             "flush.size": "1",
             "rotate.interval.ms": "1000"
           }
