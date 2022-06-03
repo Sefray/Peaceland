@@ -31,7 +31,7 @@ package peaceland {
 
         val rd = new Random()
 
-        while (true) {
+        def fun() : Unit = {
           Thread.sleep(100)
           if (rd.between(0, 100) == 42) {
             logger.info("Sending message")
@@ -44,7 +44,11 @@ package peaceland {
             )
             producer.flush()
           }
+          fun()
         }
+
+        fun()
+
         // producer.close()
       }
     }
