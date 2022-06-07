@@ -10,6 +10,13 @@ import org.apache.kafka.streams.scala.ImplicitConversions._
 
 import scala.util.Random
 
+import org.json4s._
+import org.json4s.native.JsonMethods._
+import org.json4s.jackson.Serialization
+import org.json4s.jackson.Serialization.write
+
+import peaceland.office._
+
 object main {
   def main(args: Array[String]): Unit = {
 
@@ -29,11 +36,17 @@ object main {
 
     val rd : Random = new Random(seed)
 
+    implicit val formats = DefaultFormats
+
     val builder = new StreamsBuilder()
     builder
     .stream[String, String](input_topic)
-    // .filter((key, value) => rd.between(0, 100) == 42)
-    .filter((key, value) => value.contains("id"))
+    .map((key, value) => parse(value).extract[Report])
+    .flatMap(report => report.citizens.map(citizen => (report, citizen)))
+    .filter((report, citizen) => citizen.score < -50)
+    .map((report, citizen) => write(Alert(AlertLocation(report.pos.lat, report.pos.lon),
+                                    AlertCitizen(citizen.id, citizen.score),
+                                    report.timestamp)))
     .to(alert_topic)
 
     val streams: KafkaStreams = new KafkaStreams(builder.build(), config)
