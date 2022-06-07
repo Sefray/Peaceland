@@ -1,28 +1,17 @@
-import java.time.Duration
-import java.util.Properties
-
-import org.apache.kafka.streams.scala.StreamsBuilder
-import org.apache.kafka.streams.scala.kstream._
-import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
-
-import org.apache.kafka.streams.scala.serialization.Serdes._
 import org.apache.kafka.streams.scala.ImplicitConversions._
-
-import scala.util.Random
-
+import org.apache.kafka.streams.scala.StreamsBuilder
+import org.apache.kafka.streams.scala.serialization.Serdes._
+import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
 import org.json4s._
-import org.json4s.native.JsonMethods._
-import org.json4s.jackson.Serialization
 import org.json4s.jackson.Serialization.write
-
+import org.json4s.native.JsonMethods._
 import peaceland.office._
+
+import java.util.Properties
+import scala.util.Random
 
 object main {
   def main(args: Array[String]): Unit = {
-
-    val duration = 300 // Seconds
-
-    val seed = 42
     val host = scala.util.Properties.envOrElse("PL_KAFKA_HOST", "localhost:9092")
     val input_topic = scala.util.Properties.envOrElse("PL_REPORT_TOPIC", "reports")
     val alert_topic = scala.util.Properties.envOrElse("PL_ALERT_TOPIC", "alerts")
@@ -34,20 +23,20 @@ object main {
       props
     }
 
-    val rd : Random = new Random(seed)
-
     implicit val formats = DefaultFormats
 
     val builder = new StreamsBuilder()
     builder
-    .stream[String, String](input_topic)
-    .map((key, value) => parse(value).extract[Report])
-    .flatMap(report => report.citizens.map(citizen => (report, citizen)))
-    .filter((report, citizen) => citizen.score < -50)
-    .map((report, citizen) => write(Alert(AlertLocation(report.pos.lat, report.pos.lon),
-                                    AlertCitizen(citizen.id, citizen.score),
-                                    report.timestamp)))
-    .to(alert_topic)
+      .stream[String, String](input_topic)
+      .mapValues(value => parse(value).extract[Report])
+      .flatMapValues(report => report.citizens.map(citizen => (report, citizen)))
+      .filter((_, value) => value._2.score < 0)
+      .mapValues(value =>
+        Alert(AlertLocation(value._1.pos.lat, value._1.pos.lon),
+          AlertCitizen(value._2.id, value._2.score),
+          value._1.timestamp))
+      .mapValues(value => write(value))
+      .to(alert_topic)
 
     val streams: KafkaStreams = new KafkaStreams(builder.build(), config)
     streams.cleanUp()
