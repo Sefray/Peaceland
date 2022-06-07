@@ -49,7 +49,6 @@ package peaceland {
 
         fun()
 
-        // producer.close()
       }
     }
   }
