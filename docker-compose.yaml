@@ -9,7 +9,7 @@ services:
     environment:
       PL_KAFKA_HOST: broker:29092
       PL_REPORT_TOPIC: reports
-      PL_NB_PEACEWATCHER: 3
+      PL_NB_PEACEWATCHER: 2
     deploy:
       replicas: 3
 
@@ -22,6 +22,19 @@ services:
       PL_KAFKA_HOST: broker:29092
       PL_REPORT_TOPIC: reports
       PL_ALERT_TOPIC: alerts
+    deploy:
+      replicas: 3
+
+  peacemaker-connector:
+    build:
+      context: ./peacemaker-connector
+    depends_on:
+      - broker
+    environment:
+      PL_KAFKA_HOST: broker:29092
+      PL_ALERT_TOPIC: alerts
+      PL_WEBHOOK_URL: https://discord.com/api/webhooks/981686381699039253/YGmN263FAzUJa7VLE5bJuXA36PULVNtiZpSeFvi92MIx_qjTwZSJhAWOzIqv4Z62bPz1
+      PL_GROUP_ID: pl_group
     deploy:
       replicas: 3
 
