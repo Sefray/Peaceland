@@ -16,13 +16,14 @@ object main {
     val duration = 300 // Seconds
 
     val seed = 42
-    val input_topic = "reports"
-    val alert_topic = "alerts"
+    val host = scala.util.Properties.envOrElse("PL_KAFKA_HOST", "localhost:9092")
+    val input_topic = scala.util.Properties.envOrElse("PL_REPORT_TOPIC", "reports")
+    val alert_topic = scala.util.Properties.envOrElse("PL_ALERT_TOPIC", "alerts")
 
     val config: Properties = {
       val props = new Properties()
       props.put(StreamsConfig.APPLICATION_ID_CONFIG, "peaceland-app")
-      props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
+      props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, host)
       props
     }
 
@@ -39,10 +40,5 @@ object main {
     streams.cleanUp()
 
     streams.start()
-
-    Thread.sleep(duration * 1000L)
-
-    streams.cleanUp()
-    streams.close()
   }
 }
