@@ -12,17 +12,14 @@ package peaceland {
     object ReportGenerator {
       def generateLocation(rd: Random): Location = {
         def generateLocationIntern(
-            bound: Double,
-            a: String,
-            b: String
+            bound: Double
         ): String = {
           val F = ((rd.between(0, bound)) * 100).round / 100f
-          val L = if (rd.nextInt() % 2 == 0) a else b
-          F.toString + " " + L
+          F.toString
         }
 
-        val lon = generateLocationIntern(90, "N", "S")
-        val lat = generateLocationIntern(180, "E", "W")
+        val lon = generateLocationIntern(90)
+        val lat = generateLocationIntern(180)
 
         Location(lon, lat)
       }
