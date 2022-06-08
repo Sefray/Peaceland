@@ -1,0 +1,24 @@
+{
+    "id": 18,
+    "pos": {
+        "lat": "20.3193 N",
+        "lon": "116.1694 E"
+    },
+    "citizens": [
+        {
+            "citizenId": "666",
+            "citizenScore": -10,
+            "words": [
+                "riot"
+            ]
+        },
+		{
+            "citizenId": "66",
+            "citizenScore": -10,
+            "words": [
+                "riot"
+            ]
+        }
+    ],
+    "timestamp": "14:40:32H21/11/22ZUTC+2"
+}
