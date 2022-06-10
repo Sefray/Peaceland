@@ -95,7 +95,7 @@ object Main {
       .add("lat_max", FloatType)
       .add("suspicious activities", FloatType)
 
-    var df = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
+    val df = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
     zones.foreach(coord => {
       df = df.union(getReportByZone(suspicious, coord(0), coord(1), coord(2), coord(3)));
     })
