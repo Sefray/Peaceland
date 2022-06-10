@@ -37,7 +37,7 @@ package peaceland {
             Citizen(
               randomUUID().toString,
               rd.between(-100, 100),
-              List.range(0, 10).map(w => rd.nextString(rd.between(min_nb_word, max_nb_word)))
+              List.range(0, 10).map(w => rd.alphanumeric.take(rd.between(min_nb_word, max_nb_word)).mkString(""))
             )
           )
       }
