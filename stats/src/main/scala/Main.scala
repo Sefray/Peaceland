@@ -96,8 +96,9 @@ object Main {
       .add("suspicious activities", FloatType)
 
     var df = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
-    for (coord <- zones)
-      df = df.union(getReportByZone(suspicious, coord(0), coord(1), coord(2), coord(3)))
+    zones.foreach(coord => {
+      df = df.union(getReportByZone(suspicious, coord(0), coord(1), coord(2), coord(3)));
+    })
     println("The riskiest zones are :")
     df.show(false)
   }
