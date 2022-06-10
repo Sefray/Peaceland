@@ -59,7 +59,7 @@ object Main {
 
   def top5mostDangerousHours(data: DataFrame, threshold: Integer = 0): Unit = {
     val df = data.filter($"score" < threshold) // Get the alerts
-      .select(substring(col("timestamp"), 0, 2).as("Dangerous hours")) // Select the hour
+      .select(hour($"timestamp").as("Dangerous hours")) // Select the hour
       .groupBy("Dangerous hours")
       .count()
       .orderBy(desc("count")) // Order to get the most dangerous hours first
