@@ -1,6 +1,10 @@
 version: "3"
 services:
 
+  # ----------------------------------------------------
+  # Peaceland
+  # ----------------------------------------------------
+
   peacewatcher:
     build:
       context: ./peacewatcher
@@ -11,7 +15,7 @@ services:
       PL_REPORT_TOPIC: reports
       PL_NB_PEACEWATCHER: 2
     deploy:
-      replicas: 3
+      replicas: 1
 
   office:
     build:
@@ -25,6 +29,20 @@ services:
     deploy:
       replicas: 3
 
+  stats:
+    build:
+      context: ./stats
+    depends_on:
+      - namenode
+      - spark-master
+    environment:
+      PL_HDFS_HOST: hdfs://namenode:9000
+      PL_SPARK_MASTER: spark://spark-master:7077
+      PL_REPORTS: "/topics/reports/*/*.txt"
+    deploy:
+      replicas: 1
+
+
   peacemaker-connector:
     build:
       context: ./peacemaker-connector
@@ -36,7 +54,11 @@ services:
       PL_WEBHOOK_URL: https://discord.com/api/webhooks/981686381699039253/YGmN263FAzUJa7VLE5bJuXA36PULVNtiZpSeFvi92MIx_qjTwZSJhAWOzIqv4Z62bPz1
       PL_GROUP_ID: pl_group
     deploy:
-      replicas: 3
+      replicas: 1
+
+  # ----------------------------------------------------
+  # Kafka
+  # ----------------------------------------------------
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
@@ -85,8 +107,8 @@ services:
       kafka-topics --bootstrap-server broker:29092 --list
 
       echo 'Creating kafka topics'
-      kafka-topics --bootstrap-server broker:29092 --create --if-not-exists --topic reports --replication-factor 2 --partitions 2
-      kafka-topics --bootstrap-server broker:29092 --create --if-not-exists --topic alerts --replication-factor 2 --partitions 2
+      kafka-topics --bootstrap-server broker:29092 --create --if-not-exists --topic reports --replication-factor 1 --partitions 2
+      kafka-topics --bootstrap-server broker:29092 --create --if-not-exists --topic alerts --replication-factor 1 --partitions 2
 
       echo 'Setup done, topics created:'
       kafka-topics --bootstrap-server broker:29092 --list
@@ -159,11 +181,12 @@ services:
     entrypoint: /bin/sh
     depends_on:
       - connect
+      - namenode
     command:
       - -c
       - |
         while true; do \
-          curl http://connect:8083/; \
+          curl http://connect:8083/ | grep kafka; \
           [ $$? -eq 0 ] && break; \
           sleep 1;
         done; \
@@ -182,11 +205,15 @@ services:
             "hadoop.conf.dir": "/usr/local/hadoop/etc/hadoop",
             "hadoop.home": "/usr/local/hadoop",
             "format.class": "io.confluent.connect.hdfs.string.StringFormat",
-            "flush.size": "1",
+            "flush.size": "10",
             "rotate.interval.ms": "1000"
           }
         }'; \
         echo "Connectors activated"
+
+  # ----------------------------------------------------
+  # HDFS
+  # ----------------------------------------------------
 
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
@@ -195,6 +222,8 @@ services:
     ports:
       - 9870:9870
       - 9000:9000
+    expose:
+      - "9000"
     volumes:
       - hadoop_namenode:/hadoop/dfs/name
     environment:
@@ -243,8 +272,73 @@ services:
       - ./hadoop.env
 
   # ----------------------------------------------------
+  # Spark
+  # ----------------------------------------------------
+
+  spark-master:
+    build:
+      context: ./spark
+    ports:
+      - "9990:8080"
+      - "7077:7077"
+    volumes:
+       - ./spark/apps:/opt/spark-apps
+       - ./spark/data:/opt/spark-data
+    environment:
+      - SPARK_LOCAL_IP=spark-master
+      - SPARK_WORKLOAD=master
+
+  spark-worker-1:
+    build:
+      context: ./spark
+    ports:
+      - "9991:8080"
+      - "7000:7000"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=1G
+      - SPARK_EXECUTOR_MEMORY=1G
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker-1
+    volumes:
+       - ./spark/apps:/opt/spark-apps
+       - ./spark/data:/opt/spark-data
+  spark-worker-2:
+    build:
+      context: ./spark
+    ports:
+      - "9992:8080"
+      - "7001:7000"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=1G
+      - SPARK_EXECUTOR_MEMORY=1G
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker-2
+    volumes:
+        - ./spark/apps:/opt/spark-apps
+        - ./spark/data:/opt/spark-data
+
+  # ----------------------------------------------------
   # Place holder containers made to start the other ones
   # ----------------------------------------------------
+
+  peaceland:
+    image: tianon/true
+    depends_on:
+      - peacewatcher
+      - office
+      - peacemaker-connector
+    restart: "no"
+
   hdfs:
     image: tianon/true
     depends_on:
@@ -255,11 +349,21 @@ services:
       - namenode
     restart: "no"
 
+  spark:
+    image: tianon/true
+    depends_on:
+      - spark-master
+      - spark-worker-1
+      - spark-worker-2
+    restart: "no"
+
   kafka:
     image: tianon/true
     depends_on:
       - broker
       - broker-topic-setup
+      - connect
+      - connectors-init
     restart: "no"
 
 volumes:
