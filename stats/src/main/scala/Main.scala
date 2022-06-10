@@ -30,8 +30,8 @@ object Main {
       .drop($"pos")
     flatten_data.show(false)
     flatten_data.printSchema()
-    // avgNumberOfAlertPerDay(data);
-    // mostDangerousHour(data);
+    avgNumberOfAlertPerDay(data);
+    top10mostDangerousHours(data)
     avgScoreOfRebelliousCitizen(flatten_data)
     riskyZone(flatten_data)
   }
@@ -47,14 +47,22 @@ object Main {
       .select(avg($"citizenScore"))
       .withColumn("average score", $"avg(citizenScore)")
       .drop($"avg(citizenScore)")
-
+    println("The average score of Rebellious Citizens is:")
     df.show(false)
-    return df
+    df
   }
 
-  def mostDangerousHour(data: DataFrame): Unit = {
-  }
+  def top10mostDangerousHours(data: DataFrame, threshold: Integer = -50): Unit = {
+    val df = data.filter($"citizenScore" < threshold) // Get the alerts
+      .select(hour($"timestamp").as("hour")) // Select the hour
+      .groupBy("hour")
+      .count()
+      .orderBy(desc("count(hour)")) // Order to get the most dangerous hours first
 
+    println("The top 10 most dangerous hours are:")
+
+    df.select("hour").show(10)
+  }
   // def coord_to_num(coord : StringType) : Unit = {
   // 	val pattern = "([0-9]+.[0-9]+) [SNEO]"
   // 	val pattern(num, card) = coord
@@ -68,12 +76,10 @@ object Main {
       .add("lon_max", FloatType)
       .add("lat_min", FloatType)
       .add("lat_max", FloatType)
-      .add("suspiciois activities", LongType)
+      .add("suspicious activities", LongType)
 
     val df = spark.createDataFrame(Seq(Row(lon_min, lon_max, lat_min, lat_max, nb_report)), schema)
-
-    return df
-    // return spark.createDataFrame(Seq(Row(lon_min, lon_max, lat_min, lat_max, nb_report)), schema)
+    df
   }
 
   def riskyZone(data: DataFrame, zones: List[List[Float]] = List(List(0, 90, -180, 180), List(-90, 0, -180, 180)), threshold: Integer = 0): DataFrame = {
@@ -93,16 +99,21 @@ object Main {
     // zones.foreach(coord : List[Float] => df.union(getReportByZone(suspicious, coord(0), coord(1),coord(2),coord(3))))
     for (coord <- zones)
       df = df.union(getReportByZone(suspicious, coord(0), coord(1), coord(2), coord(3)))
+    println("The riskiest zones are :")
     df.show(false)
-    return df
-    // val res =
+    df
   }
-}
 
-//   def avgNumberOfAlertPerDay(data : Dataframe): Unit = {
-//     println("The average number of drone alerts per day is: ")
-//   }
+  def avgNumberOfAlertPerDay(data : DataFrame,threshold: Integer = -50 ): Unit = {
+    val df = data.filter($"citizenScore" < threshold) // Get the alerts
+      .select(date_trunc("day", $"timestamp").as("date")) // Select the date
+      .groupBy("date")
+      .count()
+      .select(avg($"count(date)"))
 
-//   def mostDangerousHour(data : Dataframe) : Unit = {
-//     println("The most dangerous hour of the day is: ")
-//  }
+    println("The average number of drone alerts per day is: ")
+
+    df.select("avg(count(date))").show()
+  }
+ }
+
