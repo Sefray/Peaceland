@@ -83,7 +83,7 @@ object Main {
     spark.createDataFrame(Seq(Row(lon_min, lon_max, lat_min, lat_max, nb_report)), schema)
   }
 
-  def riskyZone(data: DataFrame, zones: List[List[Float]] = List(List(0, 90, -180, 180), List(-90, 0, -180, 180)), threshold: Integer = 0): Unit = {
+  def riskyZone(data: DataFrame, threshold: Integer = 0): Unit = {
     val suspicious = data.filter($"score" < threshold)
 
     val schema = new StructType()
@@ -94,11 +94,11 @@ object Main {
       .add("suspicious activities", FloatType)
 
     val df = spark.createDataFrame(spark.sparkContext.emptyRDD[Row], schema)
-    zones.foreach(coord => {
-      df = df.union(getReportByZone(suspicious, coord(0), coord(1), coord(2), coord(3)));
-    })
+    val df2 = df.union(getReportByZone(suspicious, 0, 90, -180, 180))
+    val df3 = df2.union(getReportByZone(suspicious, -90, 0, -180, 180))
+
     println("The riskiest zones are :")
-    df.show(false)
+    df3.show(false)
   }
 
   def avgNumberOfAlertPerDay(data : DataFrame,threshold: Integer = 0 ): Unit = {
