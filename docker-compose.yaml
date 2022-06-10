@@ -37,20 +37,6 @@ services:
       PL_GROUP_ID: pl_group
     deploy:
       replicas: 1
-  stats:
-    build:
-      context: ./stats
-    depends_on:
-      - namenode
-      - spark-master
-    environment:
-      PL_HDFS_HOST: hdfs://namenode:9000
-      PL_SPARK_MASTER: spark://spark-master:7077
-      PL_REPORTS: "/topics/reports/*/*.txt"
-    deploy:
-      replicas: 1
-
-  ## KAFKA
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
