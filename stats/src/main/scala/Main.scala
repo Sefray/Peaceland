@@ -49,7 +49,7 @@ object Main {
 
 
   def avgScoreOfRebelliousCitizen(data: DataFrame): Unit = {
-	var suspicious_words = List("riot", "rebellion", "war", "dictator", "guns")
+	val suspicious_words = List("riot", "rebellion", "war", "dictator", "guns")
     val df = data.select($"score", $"citizenId", explode($"words").as("word")) // Array spliting
     .filter($"word".isin(suspicious_words:_*))  // filter on the suspicious words
     .groupBy($"citizenId").avg("score") // removing the double suspicious words for one citizen
