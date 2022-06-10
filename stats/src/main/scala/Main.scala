@@ -19,6 +19,7 @@ object Main {
     val hdfsHost = scala.util.Properties.envOrElse("PL_HDFS_HOST", "")
     val reportsGlob = scala.util.Properties.envOrElse("PL_REPORTS", "reports/*.txt")
 
+	println(System.getenv().asScala("PL_HDFS_HOST"))
 
     lazy val data = spark.read.option("inferSchema", "true").option("multiline", "true").format("json").load(s"${hdfsHost}${reportsGlob}")
     
@@ -36,10 +37,10 @@ object Main {
       .drop($"pos")
 
     // Uncomment the next line if you want to see the data processed
-	  // flatten_data.show(false)
+	flatten_data.show(false)
 	
     avgNumberOfAlertPerDay(flatten_data)
-    top10mostDangerousHours(flatten_data)
+    top5mostDangerousHours(flatten_data)
     avgScoreOfRebelliousCitizen(flatten_data)
     riskyZone(flatten_data)
 
@@ -58,17 +59,17 @@ object Main {
     df.show()
   }
 
-  def top10mostDangerousHours(data: DataFrame, threshold: Integer = 0): Unit = {
+  def top5mostDangerousHours(data: DataFrame, threshold: Integer = 0): Unit = {
     val df = data.filter($"score" < threshold) // Get the alerts
       .select(substring(col("timestamp"), 0, 2).as("Dangerous hours")) // Select the hour
       .groupBy("Dangerous hours")
       .count()
       .orderBy(desc("count")) // Order to get the most dangerous hours first
     val count = df.count()
-    val nb = if (count > 10 ) 10 else count
+    val nb = if (count > 5 ) 5 else count
     println(f"The top ${nb} most dangerous hours are:")
 
-    df.select("Dangerous hours").show(10)
+    df.select("Dangerous hours").show(5)
   }
 
   def getReportByZone(data: DataFrame, lat_min: Float, lat_max: Float, lon_min: Float, lon_max: Float): DataFrame = {

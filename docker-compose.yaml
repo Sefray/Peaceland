@@ -1,6 +1,5 @@
 version: "3"
 services:
-
   peacewatcher:
     build:
       context: ./peacewatcher
@@ -24,6 +23,20 @@ services:
       PL_ALERT_TOPIC: alerts
     deploy:
       replicas: 3
+
+  stats:
+    build:
+      context: ./stats
+    depends_on:
+      - namenode
+      - spark-master
+    environment:
+      PL_HDFS_HOST: hdfs://namenode:9000
+      PL_SPARK_MASTER: spark://spark-master:7077
+      PL_REPORTS: "/topics/reports/*/*.txt"
+    deploy:
+      replicas: 1
+
 
   peacemaker-connector:
     build:
