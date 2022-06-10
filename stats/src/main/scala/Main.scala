@@ -19,8 +19,6 @@ object Main {
     val hdfsHost = scala.util.Properties.envOrElse("PL_HDFS_HOST", "")
     val reportsGlob = scala.util.Properties.envOrElse("PL_REPORTS", "reports/*.txt")
 
-	println(System.getenv().asScala("PL_HDFS_HOST"))
-
     lazy val data = spark.read.option("inferSchema", "true").option("multiline", "true").format("json").load(s"${hdfsHost}${reportsGlob}")
     
     // Uncomment the next lines to see the data and the schema loaded
