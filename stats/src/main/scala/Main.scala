@@ -8,6 +8,10 @@ import scala.collection.JavaConversions._
 object Main {
   val sparkMaster: String = scala.util.Properties.envOrElse("PL_SPARK_MASTER", "local")
   val spark: SparkSession = SparkSession.builder.appName("Statistics").config("spark.master", sparkMaster).getOrCreate()
+  // for production disable the logs of spark
+  // In a real application we would export the stats elsewhere but since we just print them in the console
+  // we'll disable the logs for readability
+  spark.sparkContext.setLogLevel("ERROR")
 
   import spark.implicits._
 
@@ -16,24 +20,27 @@ object Main {
     val hdfsHost = scala.util.Properties.envOrElse("PL_HDFS_HOST", "")
     val reportsGlob = scala.util.Properties.envOrElse("PL_REPORTS", "reports/*.txt")
 
+
     lazy val data = spark.read.option("inferSchema", "true").option("multiline", "true").format("json").load(s"${hdfsHost}${reportsGlob}")
     data.show(false)
     data.printSchema()
 
     val flatten_data = data.select($"*", explode($"citizens"))
       .drop($"citizens")
-      .withColumn("citizenId", $"col.id")
-      .withColumn("citizenScore", $"col.score")
+      .withColumn("id", $"col.id")
+      .withColumn("score", $"col.score")
       .withColumn("words", $"col.words")
       .drop($"col")
       .select($"*", $"pos.*")
       .drop($"pos")
-    flatten_data.show(false)
-    flatten_data.printSchema()
-    avgNumberOfAlertPerDay(data);
-    top10mostDangerousHours(data)
+    // flatten_data.show(false)
+    // flatten_data.printSchema()
+    avgNumberOfAlertPerDay(flatten_data);
+    top10mostDangerousHours(flatten_data)
     avgScoreOfRebelliousCitizen(flatten_data)
     riskyZone(flatten_data)
+
+    spark.stop()
   }
 
   var suspicious_words = List("riot", "rebellion")
@@ -44,20 +51,20 @@ object Main {
 
   def avgScoreOfRebelliousCitizen(data: DataFrame): DataFrame = {
     val df = data.where(array_contains(data("words"), "riot"))
-      .select(avg($"citizenScore"))
-      .withColumn("average score", $"avg(citizenScore)")
-      .drop($"avg(citizenScore)")
+      .select(avg($"score"))
+      .withColumn("average score", $"avg(score)")
+      .drop($"avg(score)")
     println("The average score of Rebellious Citizens is:")
     df.show(false)
     df
   }
 
   def top10mostDangerousHours(data: DataFrame, threshold: Integer = -50): Unit = {
-    val df = data.filter($"citizenScore" < threshold) // Get the alerts
+    val df = data.filter($"score" < threshold) // Get the alerts
       .select(hour($"timestamp").as("hour")) // Select the hour
       .groupBy("hour")
       .count()
-      .orderBy(desc("count(hour)")) // Order to get the most dangerous hours first
+      .orderBy(desc("count")) // Order to get the most dangerous hours first
 
     println("The top 10 most dangerous hours are:")
 
@@ -84,7 +91,7 @@ object Main {
 
   def riskyZone(data: DataFrame, zones: List[List[Float]] = List(List(0, 90, -180, 180), List(-90, 0, -180, 180)), threshold: Integer = 0): DataFrame = {
     // val suspicious = data.filter($"words".filter(x => x.isin(suspicious_words: _*)).count() != 0)
-    val suspicious = data.filter($"citizenScore" < threshold)
+    val suspicious = data.filter($"score" < threshold)
 
     val schema = new StructType()
       .add("lon_min", FloatType)
@@ -105,15 +112,15 @@ object Main {
   }
 
   def avgNumberOfAlertPerDay(data : DataFrame,threshold: Integer = -50 ): Unit = {
-    val df = data.filter($"citizenScore" < threshold) // Get the alerts
+    val df = data.filter($"score" < threshold) // Get the alerts
       .select(date_trunc("day", $"timestamp").as("date")) // Select the date
       .groupBy("date")
       .count()
-      .select(avg($"count(date)"))
+      .select(avg($"count"))
 
     println("The average number of drone alerts per day is: ")
 
-    df.select("avg(count(date))").show()
+    df.select("avg(count)").show()
   }
  }
 
