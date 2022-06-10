@@ -27,6 +27,14 @@ package peaceland {
       def generateCitizens(rd: Random, n: Int): List[Citizen] = {
         val min_nb_word = 3
         val max_nb_word = 10
+		val words = Seq(
+					"Yo","Hello","What's up?","Como estas?","You", "rang?", "peace", "love", 
+                    "youpi", "hourra", "happy", "smile", "bliss","Dude","literally", "I",
+					"puzzle", "linux", "vscode", "tissue", "window", "lamp", "eiffel", "harry", "potter",
+					"jacket", "scala", "suicide", "spark", "murder", "kafka", "iwanttoburnmyself", "hdfs",
+					"baptman",
+                    "riot", "rebellion", "war", "dictator", "guns"
+				)
 
         List
           .range(0, n)
@@ -34,7 +42,8 @@ package peaceland {
             Citizen(
               randomUUID().toString,
               rd.between(-100, 100),
-              List.range(0, 10).map(w => rd.alphanumeric.take(rd.between(min_nb_word, max_nb_word)).mkString(""))
+              List.range(0, rd.between(min_nb_word, max_nb_word)).map(w => words(rd.nextInt(words.length)))
+            //   List.range(0, 10).map(w => rd.alphanumeric.take(rd.between(min_nb_word, max_nb_word)).mkString(""))
             )
           )
       }
