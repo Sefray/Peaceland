@@ -1,5 +1,10 @@
 version: "3"
 services:
+
+  # ----------------------------------------------------
+  # Peaceland
+  # ----------------------------------------------------
+
   peacewatcher:
     build:
       context: ./peacewatcher
@@ -50,6 +55,10 @@ services:
       PL_GROUP_ID: pl_group
     deploy:
       replicas: 1
+
+  # ----------------------------------------------------
+  # Kafka
+  # ----------------------------------------------------
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
@@ -201,7 +210,9 @@ services:
         }'; \
         echo "Connectors activated"
 
-  ### HDFS
+  # ----------------------------------------------------
+  # HDFS
+  # ----------------------------------------------------
 
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
@@ -259,7 +270,9 @@ services:
     env_file:
       - ./hadoop.env
 
-  ### Spark
+  # ----------------------------------------------------
+  # Spark
+  # ----------------------------------------------------
 
   spark-master:
     build:
