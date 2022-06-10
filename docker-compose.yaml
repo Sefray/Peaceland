@@ -181,6 +181,7 @@ services:
     entrypoint: /bin/sh
     depends_on:
       - connect
+      - namenode
     command:
       - -c
       - |
@@ -335,6 +336,7 @@ services:
     depends_on:
       - peacewatcher
       - office
+      - peacemaker-connector
     restart: "no"
 
   hdfs:
@@ -360,6 +362,8 @@ services:
     depends_on:
       - broker
       - broker-topic-setup
+      - connect
+      - connectors-init
     restart: "no"
 
 volumes:
