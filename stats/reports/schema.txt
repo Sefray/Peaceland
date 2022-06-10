@@ -6,8 +6,8 @@
     },
     "citizens": [
         {
-            "citizenId": "69",
-            "citizenScore": -42,
+            "id": "69",
+            "score": -42,
             "words": [
                 "It's",
                 "literally",
@@ -15,8 +15,8 @@
             ]
         }, 
 		{
-            "citizenId": "11",
-            "citizenScore": 20,
+            "id": "11",
+            "score": 20,
             "words": [
                 "I",
 				"love",
